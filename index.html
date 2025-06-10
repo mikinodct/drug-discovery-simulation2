@@ -1,0 +1,2014 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>創薬シミュレーションゲーム - Advanced</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .game-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: #5e3391;
+            margin-bottom: 20px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .tutorial {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 5px solid #2196F3;
+        }
+
+        .tutorial h3 {
+            color: #1976D2;
+            margin-bottom: 10px;
+        }
+
+        .status-bar {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .status-item {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            color: white;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s;
+        }
+
+        .status-item:hover {
+            transform: translateY(-2px);
+        }
+
+        .status-item h3 {
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+
+        .status-item p {
+            font-size: 1.3em;
+            font-weight: bold;
+        }
+
+        .phase-container {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        .phase-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .phase-title {
+            font-size: 1.5em;
+            color: #5e3391;
+        }
+
+        .phase-status {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+
+        .phase-status.active {
+            background: #4CAF50;
+            color: white;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+
+        .phase-status.completed {
+            background: #2196F3;
+            color: white;
+        }
+
+        .phase-status.locked {
+            background: #9E9E9E;
+            color: white;
+        }
+
+        .phase-description {
+            background: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border-left: 4px solid #5e3391;
+        }
+
+        .progress-bar {
+            background: #e0e0e0;
+            height: 25px;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 15px;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50, #8BC34A);
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+
+        .action-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .action-card {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s;
+        }
+
+        .action-card:hover:not(.disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .action-card.disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .action-card h4 {
+            color: #5e3391;
+            margin-bottom: 10px;
+        }
+
+        .action-details {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+        }
+
+        .action-detail {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #4CAF50 0%, #8BC34A 100%);
+            color: white;
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #FF9800 0%, #FFC107 100%);
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #f44336 0%, #e91e63 100%);
+            color: white;
+        }
+
+        .btn-info {
+            background: linear-gradient(135deg, #36D1DC 0%, #5B86E5 100%);
+            color: white;
+        }
+
+        .event-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .event-content {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            animation: slideIn 0.5s;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .event-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .event-icon {
+            font-size: 4em;
+            margin-bottom: 10px;
+        }
+
+        .event-title {
+            font-size: 1.8em;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .event-description {
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .event-effects {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .effect-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .effect-positive {
+            color: #4CAF50;
+        }
+
+        .effect-negative {
+            color: #f44336;
+        }
+
+        .message-log {
+            background: #333;
+            color: #0f0;
+            padding: 15px;
+            border-radius: 10px;
+            height: 180px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            margin-top: 20px;
+        }
+
+        .message {
+            margin-bottom: 5px;
+            animation: fadeIn 0.5s;
+        }
+
+        .message.event {
+            color: #ffeb3b;
+            font-weight: bold;
+        }
+
+        .message.success {
+            color: #4CAF50;
+        }
+
+        .message.warning {
+            color: #ff9800;
+        }
+
+        .message.error {
+            color: #f44336;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .phase-summary {
+            background: #e8f5e9;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 2px solid #4CAF50;
+        }
+
+        .phase-summary h3 {
+            color: #2e7d32;
+            margin-bottom: 15px;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+
+        .summary-item {
+            text-align: center;
+        }
+
+        .summary-label {
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .summary-value {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #2e7d32;
+        }
+
+        .game-over {
+            text-align: center;
+            padding: 30px;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            border-radius: 15px;
+            color: white;
+            margin-top: 20px;
+        }
+
+        .game-over h2 {
+            font-size: 2em;
+            margin-bottom: 15px;
+        }
+
+        .restart-btn {
+            margin-top: 20px;
+            padding: 15px 30px;
+            font-size: 1.2em;
+        }
+
+        @media (max-width: 768px) {
+            .status-bar {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .action-buttons {
+                grid-template-columns: 1fr;
+            }
+            
+            .summary-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>🧪 創薬シミュレーション Advanced 🧬</h1>
+        
+        <div class="tutorial" id="tutorial">
+            <h3>📚 ゲーム解説</h3>
+            <p>実際の創薬開発プロセスをシミュレートするゲームです。各フェーズで戦略的な選択を行い、限られた予算と時間で新薬を完成させましょう。</p>
+            <ul style="margin-left: 20px; margin-top: 10px;">
+                <li><strong>アクションシステム</strong>：各フェーズで3つのアクションから選択
+                    <ul style="margin-left: 20px;">
+                        <li>各アクションは1回のみ実行可能</li>
+                        <li>全アクション実行で約100%進捗（成功/失敗により変動）</li>
+                        <li>進捗不足時は「追加実験」オプションが出現</li>
+                    </ul>
+                </li>
+                <li><strong>ランダムイベント</strong>：各フェーズクリア後に発生
+                    <ul style="margin-left: 20px;">
+                        <li>ポジティブ（40%）、ネガティブ（40%）、ニュートラル（20%）</li>
+                        <li>臨床試験段階では重篤な副作用のリスクあり（強制終了）</li>
+                    </ul>
+                </li>
+                <li><strong>戦略的対応</strong>：ネガティブイベント時の選択肢
+                    <ul style="margin-left: 20px;">
+                        <li>追加予算要請：成功率は進捗に依存、失敗時は他の選択肢へ</li>
+                        <li>戦略見直し：ピボット、提携、再評価など</li>
+                        <li>前フェーズ補強：追加投資で基盤を強化</li>
+                    </ul>
+                </li>
+                <li><strong>プロジェクト強制終了条件</strong>
+                    <ul style="margin-left: 20px;">
+                        <li>すべての資金調達手段を使い果たした場合</li>
+                        <li>重篤な副作用が発生した場合（臨床試験段階）</li>
+                        <li>資金調達に失敗し、代替手段がない場合</li>
+                    </ul>
+                </li>
+                <li><strong>4つの重要指標</strong>：成功確率、予算、時間、市場競争力のバランスを管理</li>
+            </ul>
+        </div>
+        
+        <div class="status-bar">
+            <div class="status-item">
+                <h3>💰 予算</h3>
+                <p id="budget">$100M</p>
+            </div>
+            <div class="status-item">
+                <h3>📅 経過月数</h3>
+                <p id="months">0</p>
+            </div>
+            <div class="status-item">
+                <h3>🎯 成功確率</h3>
+                <p id="success-rate">5%</p>
+            </div>
+            <div class="status-item">
+                <h3>🏆 競争力</h3>
+                <p id="competitiveness">50%</p>
+            </div>
+        </div>
+
+        <div id="phase-summary" style="display: none;"></div>
+        <div id="phases-container"></div>
+        
+        <div class="message-log" id="message-log">
+            <div class="message">創薬プロジェクトを開始しました！予算$100Mで世界を変える新薬を開発しましょう。</div>
+        </div>
+    </div>
+
+    <div class="event-modal" id="event-modal">
+        <div class="event-content" id="event-content"></div>
+    </div>
+
+    <script>
+        class DrugDiscoveryGame {
+            constructor() {
+                this.budget = 100000000; // $100M
+                this.months = 0;
+                this.successRate = 5;
+                this.competitiveness = 50;
+                this.currentPhase = 0;
+                this.messages = [];
+                this.eventHistory = [];
+                this.totalSpent = 0;
+                this.currentEvent = null;
+                this.fundingAttempts = {
+                    emergency: false,
+                    assets: false,
+                    joint: false
+                };
+                
+                this.randomEvents = {
+                    positive: [
+                        {
+                            title: "画期的な発見",
+                            description: "研究チームが予想外の発見をしました！ターゲット分子の新しい作用機序が明らかになり、より効果的な創薬アプローチが可能になりました。",
+                            effects: {
+                                successRate: 15,
+                                competitiveness: 10,
+                                message: "新しい作用機序の発見により、開発が大きく前進しました！"
+                            }
+                        },
+                        {
+                            title: "政府補助金獲得",
+                            description: "革新的な研究内容が認められ、政府から追加の研究補助金を獲得しました。",
+                            effects: {
+                                budget: 20000000,
+                                successRate: 5,
+                                message: "政府補助金$20Mを獲得！予算に余裕ができました。"
+                            }
+                        },
+                        {
+                            title: "AIによるブレークスルー",
+                            description: "最新のAI創薬プラットフォームが期待以上の成果を上げ、開発期間を大幅に短縮できる見込みです。",
+                            effects: {
+                                timeBonus: -3,
+                                successRate: 10,
+                                competitiveness: 15,
+                                message: "AI解析により開発が加速！時間を節約できました。"
+                            }
+                        },
+                        {
+                            title: "競合他社の撤退",
+                            description: "主要な競合他社が同じ領域から撤退を発表。市場での優位性が大幅に向上しました。",
+                            effects: {
+                                competitiveness: 25,
+                                successRate: 8,
+                                message: "競合の撤退により市場での立場が強化されました！"
+                            }
+                        }
+                    ],
+                    negative: [
+                        {
+                            title: "予期せぬ副作用",
+                            description: "前臨床試験で軽微ながら予期せぬ副作用が発見されました。追加の安全性試験が必要になります。",
+                            effects: {
+                                budget: -10000000,
+                                successRate: -10,
+                                timeBonus: 3,
+                                message: "副作用への対応で追加コストと時間が必要になりました。"
+                            }
+                        },
+                        {
+                            title: "重篤な副作用発生",
+                            description: "試験中に予期せぬ重篤な副作用が発生しました。被験者の安全を最優先し、規制当局への報告が必要です。",
+                            effects: {
+                                isCritical: true,
+                                message: "重篤な副作用によりプロジェクトが中止されました。"
+                            }
+                        },
+                        {
+                            title: "規制当局からの指導",
+                            description: "規制当局から試験プロトコルの修正を求められました。承認プロセスがより厳格になります。",
+                            effects: {
+                                successRate: -15,
+                                competitiveness: -10,
+                                message: "規制要件の強化により開発難易度が上昇しました。"
+                            }
+                        },
+                        {
+                            title: "主要研究者の離脱",
+                            description: "プロジェクトの主要研究者が競合他社に引き抜かれました。チームの再編が必要です。",
+                            effects: {
+                                successRate: -12,
+                                competitiveness: -15,
+                                budget: -5000000,
+                                message: "人材流出により開発体制の立て直しが必要になりました。"
+                            }
+                        },
+                        {
+                            title: "特許紛争",
+                            description: "競合他社から特許侵害の申し立てを受けました。法的対応が必要です。",
+                            effects: {
+                                budget: -15000000,
+                                competitiveness: -20,
+                                message: "特許紛争への対応で多額の費用が発生しました。"
+                            }
+                        }
+                    ],
+                    neutral: [
+                        {
+                            title: "市場環境の変化",
+                            description: "対象疾患に対する新しい治療法が他社から発表されました。戦略の見直しが必要かもしれません。",
+                            effects: {
+                                competitiveness: -5,
+                                strategicShift: true,
+                                message: "市場環境が変化しました。戦略の調整を検討してください。"
+                            }
+                        },
+                        {
+                            title: "パンデミックの影響",
+                            description: "世界的な感染症の流行により、臨床試験の実施方法を変更する必要があります。",
+                            effects: {
+                                timeBonus: 2,
+                                budget: -5000000,
+                                message: "試験方法の変更により若干の遅延とコスト増が発生しました。"
+                            }
+                        }
+                    ]
+                };
+                
+                this.phases = [
+                    {
+                        name: "ターゲット探索",
+                        description: "疾患の原因となる分子（ターゲット）を特定します。この段階での選択が、その後の開発全体の方向性を決定します。",
+                        duration: 6,
+                        progress: 0,
+                        cost: 5000000,
+                        successBonus: 10,
+                        riskFactor: 0.8,
+                        actions: [
+                            { 
+                                name: "基礎研究重視", 
+                                cost: 1500000, 
+                                time: 3, 
+                                success: 5,
+                                competitiveness: 5,
+                                description: "アカデミアとの共同研究で基礎的なメカニズムを解明"
+                            },
+                            { 
+                                name: "バイオインフォマティクス活用", 
+                                cost: 2500000, 
+                                time: 2, 
+                                success: 8,
+                                competitiveness: 10,
+                                description: "AIとビッグデータを活用した効率的なターゲット探索"
+                            },
+                            { 
+                                name: "臨床データ分析", 
+                                cost: 3000000, 
+                                time: 2, 
+                                success: 10,
+                                competitiveness: 15,
+                                description: "実際の患者データから有望なターゲットを特定"
+                            }
+                        ]
+                    },
+                    {
+                        name: "リード化合物探索",
+                        description: "ターゲットに作用する化合物を探索・最適化します。数十万の候補から最も有望な化合物を選び出す重要なフェーズです。",
+                        duration: 12,
+                        progress: 0,
+                        cost: 15000000,
+                        successBonus: 15,
+                        riskFactor: 0.7,
+                        actions: [
+                            { 
+                                name: "ハイスループットスクリーニング", 
+                                cost: 6000000, 
+                                time: 4, 
+                                success: 8,
+                                competitiveness: 8,
+                                description: "大規模な化合物ライブラリーから自動スクリーニング"
+                            },
+                            { 
+                                name: "AI創薬プラットフォーム", 
+                                cost: 10000000, 
+                                time: 3, 
+                                success: 12,
+                                competitiveness: 20,
+                                description: "最新のAI技術で新規化合物をデザイン"
+                            },
+                            { 
+                                name: "フラグメントベース創薬", 
+                                cost: 8000000, 
+                                time: 5, 
+                                success: 15,
+                                competitiveness: 12,
+                                description: "小さな分子片から段階的に化合物を構築"
+                            }
+                        ]
+                    },
+                    {
+                        name: "前臨床試験",
+                        description: "動物実験で安全性と有効性を確認します。ヒトでの試験に進む前の最後の関門です。",
+                        duration: 18,
+                        progress: 0,
+                        cost: 25000000,
+                        successBonus: 20,
+                        riskFactor: 0.6,
+                        actions: [
+                            { 
+                                name: "標準的な毒性評価", 
+                                cost: 8000000, 
+                                time: 6, 
+                                success: 10,
+                                competitiveness: 5,
+                                description: "規制要件を満たす基本的な安全性試験"
+                            },
+                            { 
+                                name: "包括的安全性パッケージ", 
+                                cost: 15000000, 
+                                time: 5, 
+                                success: 18,
+                                competitiveness: 15,
+                                description: "追加の特殊毒性試験を含む包括的な評価"
+                            },
+                            { 
+                                name: "トランスレーショナル研究", 
+                                cost: 12000000, 
+                                time: 4, 
+                                success: 15,
+                                competitiveness: 18,
+                                description: "ヒトでの効果を予測する先進的な試験系を使用"
+                            }
+                        ]
+                    },
+                    {
+                        name: "臨床試験 Phase I",
+                        description: "初めてヒトに投与し、安全性と薬物動態を確認します。少数の健康な志願者または患者で実施します。",
+                        duration: 12,
+                        progress: 0,
+                        cost: 20000000,
+                        successBonus: 15,
+                        riskFactor: 0.5,
+                        actions: [
+                            { 
+                                name: "従来型Phase I試験", 
+                                cost: 8000000, 
+                                time: 4, 
+                                success: 10,
+                                competitiveness: 5,
+                                description: "標準的な用量漸増試験デザイン"
+                            },
+                            { 
+                                name: "適応型デザイン", 
+                                cost: 12000000, 
+                                time: 3, 
+                                success: 15,
+                                competitiveness: 15,
+                                description: "リアルタイムデータに基づく柔軟な試験設計"
+                            },
+                            { 
+                                name: "バイオマーカー併用試験", 
+                                cost: 15000000, 
+                                time: 4, 
+                                success: 18,
+                                competitiveness: 20,
+                                description: "効果予測マーカーを活用した精密医療アプローチ"
+                            }
+                        ]
+                    },
+                    {
+                        name: "臨床試験 Phase II/III",
+                        description: "多数の患者で有効性と安全性を証明する最終段階です。成功すれば新薬承認へ進めます。",
+                        duration: 36,
+                        progress: 0,
+                        cost: 50000000,
+                        successBonus: 25,
+                        riskFactor: 0.4,
+                        actions: [
+                            { 
+                                name: "国内多施設共同試験", 
+                                cost: 20000000, 
+                                time: 12, 
+                                success: 15,
+                                competitiveness: 10,
+                                description: "国内の主要医療機関での大規模試験"
+                            },
+                            { 
+                                name: "グローバル試験", 
+                                cost: 35000000, 
+                                time: 10, 
+                                success: 25,
+                                competitiveness: 25,
+                                description: "世界同時開発による迅速な市場アクセス"
+                            },
+                            { 
+                                name: "リアルワールドエビデンス活用", 
+                                cost: 25000000, 
+                                time: 8, 
+                                success: 20,
+                                competitiveness: 30,
+                                description: "実臨床データを活用した革新的な承認戦略"
+                            }
+                        ]
+                    }
+                ];
+                
+                this.init();
+            }
+            
+            init() {
+                this.renderPhases();
+                this.updateStatus();
+                this.addMessage("創薬プロジェクトを開始しました！予算$100Mで世界を変える新薬を開発しましょう。", "success");
+            }
+            
+            renderPhases() {
+                const container = document.getElementById('phases-container');
+                container.innerHTML = '';
+                
+                this.phases.forEach((phase, index) => {
+                    const phaseEl = document.createElement('div');
+                    phaseEl.className = 'phase-container';
+                    
+                    const status = index < this.currentPhase ? 'completed' : 
+                                 index === this.currentPhase ? 'active' : 'locked';
+                    
+                    phaseEl.innerHTML = `
+                        <div class="phase-header">
+                            <h2 class="phase-title">${phase.name}</h2>
+                            <span class="phase-status ${status}">${
+                                status === 'completed' ? '完了' : 
+                                status === 'active' ? '進行中' : 'ロック中'
+                            }</span>
+                        </div>
+                        <div class="phase-description">
+                            ${phase.description}
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${phase.progress}%">
+                                ${Math.round(phase.progress)}%
+                            </div>
+                        </div>
+                        <div class="action-buttons" id="actions-${index}"></div>
+                    `;
+                    
+                    container.appendChild(phaseEl);
+                    
+                    if (index === this.currentPhase) {
+                        this.renderActions(index);
+                    }
+                });
+            }
+            
+            renderActions(phaseIndex) {
+                const actionsContainer = document.getElementById(`actions-${phaseIndex}`);
+                const phase = this.phases[phaseIndex];
+                
+                actionsContainer.innerHTML = '';
+                
+                if (phase.progress >= 100) {
+                    const nextBtn = document.createElement('button');
+                    nextBtn.className = 'btn btn-success';
+                    nextBtn.innerHTML = '🎉 フェーズ完了！次へ進む →';
+                    nextBtn.onclick = () => this.completePhase();
+                    actionsContainer.appendChild(nextBtn);
+                    return;
+                }
+                
+                phase.actions.forEach((action, actionIndex) => {
+                    const isExecuted = phase.executedActions && phase.executedActions.includes(actionIndex);
+                    const card = document.createElement('div');
+                    card.className = `action-card ${this.budget < action.cost || isExecuted ? 'disabled' : ''}`;
+                    
+                    card.innerHTML = `
+                        <h4>${action.name} ${isExecuted ? '✓' : ''}</h4>
+                        <p style="font-size: 0.9em; color: #666; margin-bottom: 10px;">${action.description}</p>
+                        <div class="action-details">
+                            <div class="action-detail">
+                                <span>💰</span>
+                                <span>${(action.cost/1000000).toFixed(1)}M</span>
+                            </div>
+                            <div class="action-detail">
+                                <span>⏱️</span>
+                                <span>${action.time}ヶ月</span>
+                            </div>
+                        </div>
+                        <div class="action-details">
+                            <div class="action-detail">
+                                <span>🎯</span>
+                                <span>+${action.success}%</span>
+                            </div>
+                            <div class="action-detail">
+                                <span>🏆</span>
+                                <span>+${action.competitiveness}%</span>
+                            </div>
+                        </div>
+                        <button class="btn ${isExecuted ? 'btn-success' : 'btn-primary'}" 
+                                ${this.budget < action.cost || isExecuted ? 'disabled' : ''} 
+                                onclick="game.executeAction(${phaseIndex}, ${actionIndex})">
+                            ${isExecuted ? '実行済み' : '実行'}
+                        </button>
+                    `;
+                    
+                    actionsContainer.appendChild(card);
+                });
+                
+                // 全てのアクションが実行済みでも100%に達していない場合の追加オプション
+                if (phase.executedActions && phase.executedActions.length === phase.actions.length && phase.progress < 100) {
+                    const additionalCard = document.createElement('div');
+                    additionalCard.className = 'action-card';
+                    additionalCard.style.borderColor = '#ff9800';
+                    additionalCard.innerHTML = `
+                        <h4>追加実験</h4>
+                        <p style="font-size: 0.9em; color: #666; margin-bottom: 10px;">
+                            基本実験が完了しました。追加実験で進捗を100%まで進めることができます。
+                        </p>
+                        <div class="action-details">
+                            <div class="action-detail">
+                                <span>💰</span>
+                                <span>$3.0M</span>
+                            </div>
+                            <div class="action-detail">
+                                <span>⏱️</span>
+                                <span>2ヶ月</span>
+                            </div>
+                        </div>
+                        <button class="btn btn-warning" ${this.budget < 3000000 ? 'disabled' : ''} 
+                                onclick="game.executeAdditionalWork(${phaseIndex})">
+                            追加実験を実施
+                        </button>
+                    `;
+                    actionsContainer.appendChild(additionalCard);
+                }
+            }
+            
+            executeAction(phaseIndex, actionIndex) {
+                const phase = this.phases[phaseIndex];
+                const action = phase.actions[actionIndex];
+
+                // --- ターゲット探索の特殊行き詰まり演出 ---
+                if (phaseIndex === 0 && this.budget < action.cost) {
+                    // 予算不足でターゲット探索アクションが実行できない場合
+                    // ここでターゲット探索行き詰まり演出に分岐
+                    this.showTargetStuckModal();
+                    return;
+                }
+
+                if (this.budget < action.cost) {
+                    this.addMessage(`❌ 予算不足です！ ${(action.cost/1000000).toFixed(1)}M必要です。`, "error");
+                    // フェーズ内で他アクションも全て予算不足なら救済モーダル
+                    if (this.isPhaseActionStuck(phaseIndex)) {
+                        setTimeout(() => this.showRescueModal(), 500);
+                    }
+                    return;
+                }
+
+                // アクションを実行済みかチェック
+                if (!phase.executedActions) {
+                    phase.executedActions = [];
+                }
+
+                if (phase.executedActions.includes(actionIndex)) {
+                    this.addMessage(`⚠️ ${action.name}は既に実行済みです。`, "warning");
+                    return;
+                }
+
+                this.budget -= action.cost;
+                this.totalSpent += action.cost;
+                this.months += action.time;
+                phase.executedActions.push(actionIndex);
+
+                // 基本進捗を計算（各アクションで33.33%程度進む）
+                const baseProgress = 100 / phase.actions.length;
+
+                const risk = Math.random();
+                if (risk < phase.riskFactor) {
+                    phase.progress += baseProgress * 1.2;
+                    this.successRate += action.success;
+                    this.competitiveness += action.competitiveness;
+                    this.addMessage(`✅ ${action.name}が成功しました！`, "success");
+                } else {
+                    phase.progress += baseProgress * 0.8;
+                    this.successRate += action.success * 0.3;
+                    this.competitiveness += action.competitiveness * 0.5;
+                    this.addMessage(`⚠️ ${action.name}で問題が発生。進捗が遅れています。`, "warning");
+                }
+
+                phase.progress = Math.min(phase.progress, 100);
+                this.successRate = Math.min(Math.max(this.successRate, 0), 95);
+                this.competitiveness = Math.min(Math.max(this.competitiveness, 0), 100);
+
+                this.updateStatus();
+                this.renderPhases();
+
+                // 予算チェック
+                if (this.budget <= 0) {
+                    this.addMessage("💸 予算が完全に枯渇しました！", "error");
+                    setTimeout(() => this.showResourceOptions(), 500);
+                } else {
+                    // フェーズ内で未実行アクションが残り、かつどれも予算不足なら救済モーダル
+                    if (this.isPhaseActionStuck(phaseIndex)) {
+                        setTimeout(() => this.showRescueModal(), 500);
+                    }
+                }
+            }
+
+            // フェーズ内で未実行アクションが残り、どれも予算不足か判定
+            isPhaseActionStuck(phaseIndex) {
+                const phase = this.phases[phaseIndex];
+                if (!phase.executedActions) phase.executedActions = [];
+                // 未実行アクション
+                const remainActions = phase.actions
+                    .map((a, i) => ({a, i}))
+                    .filter(({a, i}) => !phase.executedActions.includes(i));
+                if (remainActions.length === 0) return false;
+                return remainActions.every(({a}) => this.budget < a.cost);
+            }
+
+            // --- 資金不足時救済モーダル ---
+            showRescueModal() {
+                const modal = document.getElementById('event-modal');
+                const content = document.getElementById('event-content');
+                // 導出は競争力80%以上のみ選択可
+                const canOutLicense = this.competitiveness >= 80;
+                content.innerHTML = `
+                    <div class="event-header" style="text-align:center;">
+                        <div class="event-icon" style="font-size:5em;">🚨</div>
+                        <h2 class="event-title" style="color:#d32f2f; font-size:2em;">プロジェクト資金行き詰まり</h2>
+                    </div>
+                    <div class="event-description" style="font-size:1.2em; margin-bottom:20px;">
+                        <b>全アクションの実行に必要な予算が不足しています。</b><br>
+                        <br>
+                        <span style="color:#c62828;">プロジェクト中止</span> または
+                        <span style="color:#1976d2;">導出（他社にライセンスアウト）</span>を選択してください。
+                    </div>
+                    <div style="display:flex; flex-direction:column; gap:18px; align-items:center;">
+                        <button class="btn btn-danger" style="width:80%; font-size:1.1em; padding:15px;" onclick="game.strategicTermination()">
+                            プロジェクト中止
+                        </button>
+                        <button class="btn btn-primary" style="width:80%; font-size:1.1em; padding:15px; ${canOutLicense ? '' : 'opacity:0.5;cursor:not-allowed;'}" ${canOutLicense ? '' : 'disabled'}
+                            onclick="if(${canOutLicense})game.executeOutLicense()">
+                            導出に挑戦（競争力80%以上で選択可）
+                        </button>
+                    </div>
+                    <div style="margin-top:20px; color:#888; font-size:1em;">
+                        ・導出時：アップフロント$50M獲得、そのステージ完了後$100M追加、最終成功時$500M追加報酬（他プロジェクトも開始可）
+                    </div>
+                `;
+                modal.style.display = 'flex';
+            }
+
+            // 導出救済ロジック
+            executeOutLicense() {
+                // フラグをセット（導出救済進行中）
+                if (!this.outLicense) this.outLicense = { phase: this.currentPhase, upfront: false, milestone: false, success: false };
+                this.outLicense.phase = this.currentPhase;
+                this.outLicense.upfront = true;
+                this.outLicense.milestone = false;
+                this.outLicense.success = false;
+                // アップフロント$50M
+                this.budget += 50000000;
+                this.addMessage("📝 導出契約成立！アップフロント$50Mを獲得。", "success");
+                document.getElementById('event-modal').style.display = 'none';
+                this.updateStatus();
+                this.renderPhases();
+                // フェーズを強制完了へ
+                setTimeout(() => this.completePhaseByOutLicense(), 500);
+            }
+
+            // 導出救済時：フェーズ強制完了
+            completePhaseByOutLicense() {
+                // 進捗を100%に
+                const phase = this.phases[this.currentPhase];
+                phase.progress = 100;
+                if (!phase.executedActions) phase.executedActions = [];
+                // 全アクション実行済み扱い
+                phase.executedActions = phase.actions.map((a,i)=>i);
+                this.addMessage("導出によりこのステージは完了扱いとなります。", "event");
+                this.updateStatus();
+                this.renderPhases();
+                // フェーズ完了サマリー
+                this.showPhaseSummary();
+                // 次へ進む
+                setTimeout(() => {
+                    // milestone報酬
+                    if (this.outLicense && !this.outLicense.milestone) {
+                        this.budget += 100000000;
+                        this.addMessage("🎉 導出マイルストーン達成！追加$100M獲得。", "success");
+                        this.outLicense.milestone = true;
+                        this.updateStatus();
+                    }
+                    this.currentPhase++;
+                    if (this.currentPhase >= this.phases.length) {
+                        this.gameOver(true);
+                    } else {
+                        this.addMessage(`📋 ${this.phases[this.currentPhase].name}を開始します。`, "success");
+                        this.renderPhases();
+                    }
+                }, 1800);
+            }
+
+            // 導出救済時：最終成功で追加報酬＆他プロジェクト開始可
+            gameOver(success) {
+                const container = document.getElementById('phases-container');
+                const gameOverEl = document.createElement('div');
+                gameOverEl.className = 'game-over';
+
+                // 導出救済フラグがあり、成功の場合
+                if (success && this.outLicense && !this.outLicense.success) {
+                    this.budget += 500000000;
+                    this.addMessage("💰 導出契約最終成功！追加$500Mを獲得。他プロジェクトも開始可能！", "success");
+                    this.outLicense.success = true;
+                }
+                if (success) {
+                    const finalScore = (this.successRate * 0.6 + this.competitiveness * 0.4);
+                    const finalSuccess = Math.random() * 100 < finalScore;
+                    if (finalSuccess) {
+                        gameOverEl.innerHTML = `
+                            <h2>🎊 おめでとうございます！</h2>
+                            <p>新薬の開発に成功しました！</p>
+                            <p>開発期間: ${this.months}ヶ月</p>
+                            <p>総開発費: $${(this.totalSpent/1000000).toFixed(1)}M</p>
+                            <p>残り予算: $${(this.budget/1000000).toFixed(1)}M</p>
+                            <p>最終成功確率: ${Math.round(this.successRate)}%</p>
+                            <p>市場競争力: ${Math.round(this.competitiveness)}%</p>
+                            ${this.outLicense && this.outLicense.success ? `<p style="color:#1976d2; font-size:1.2em;">導出契約により総額$650Mの収益を獲得！<br>（アップフロント/マイルストーン/成功報酬）</p>
+                            <p style="color:#388e3c; font-size:1.1em;">他プロジェクトも同時に開始できるようになりました！</p>` : ''}
+                            <button class="btn btn-success restart-btn" onclick="location.reload()">もう一度プレイ</button>
+                        `;
+                    } else {
+                        gameOverEl.innerHTML = `
+                            <h2>😢 惜しい！</h2>
+                            <p>最終承認で却下されました。</p>
+                            <p>成功確率${Math.round(this.successRate)}%、競争力${Math.round(this.competitiveness)}%でしたが、承認基準を満たせませんでした。</p>
+                            <button class="btn btn-warning restart-btn" onclick="location.reload()">もう一度挑戦</button>
+                        `;
+                    }
+                } else {
+                    gameOverEl.innerHTML = `
+                        <h2>💸 ゲームオーバー</h2>
+                        <p>予算が尽きてしまいました...</p>
+                        <p>開発期間: ${this.months}ヶ月</p>
+                        <p>到達フェーズ: ${this.phases[this.currentPhase].name}</p>
+                        <button class="btn btn-warning restart-btn" onclick="location.reload()">もう一度プレイ</button>
+                    `;
+                }
+                container.innerHTML = '';
+                container.appendChild(gameOverEl);
+            }
+
+            // --- ターゲット探索行き詰まり（予算不足時）新演出 ---
+            showTargetStuckModal() {
+                const modal = document.getElementById('event-modal');
+                const content = document.getElementById('event-content');
+                content.innerHTML = `
+                    <div class="event-header" style="text-align:center;">
+                        <div class="event-icon" style="font-size:4em;">🔬</div>
+                        <h2 class="event-title" style="color:#e65100; font-size:1.7em;">薬理部署に移管→再現性消失</h2>
+                    </div>
+                    <div class="event-description" style="font-size:1.1em;">
+                        <b>ターゲット探索が資金不足により薬理部署へ移管されましたが、<br>再現性が得られず行き詰まりました。</b>
+                        <br><br>
+                        次の一手を選んでください。
+                    </div>
+                    <div style="display:flex; flex-direction:column; gap:15px; margin-top:20px;">
+                        <button class="btn btn-info" style="font-size:1.1em; padding:12px;" onclick="game.targetStuckKOL()">
+                            KOLインタビューを実施
+                        </button>
+                        <button class="btn btn-primary" style="font-size:1.1em; padding:12px;" onclick="game.targetStuckNewInfo()">
+                            新規情報を取得（学会/論文）
+                        </button>
+                    </div>
+                `;
+                modal.style.display = 'flex';
+            }
+
+            // ターゲット探索行き詰まり→KOLインタビュー
+            targetStuckKOL() {
+                // モーダルを閉じて次フェーズへ
+                document.getElementById('event-modal').style.display = 'none';
+                this.addMessage("KOLインタビューで新たな知見を得て、開発をリスタート！", "success");
+                // ターゲット探索を自動完了し、リード化合物探索へ
+                const phase = this.phases[this.currentPhase];
+                phase.progress = 100;
+                phase.executedActions = phase.actions.map((a,i)=>i);
+                this.currentPhase++;
+                this.renderPhases();
+                this.updateStatus();
+                this.addMessage(`📋 ${this.phases[this.currentPhase].name}を開始します。`, "success");
+            }
+
+            // ターゲット探索行き詰まり→新規情報取得
+            targetStuckNewInfo() {
+                // モーダルを閉じて次フェーズへ
+                document.getElementById('event-modal').style.display = 'none';
+                this.addMessage("学会・論文から新規情報を取得！新たな方針で再始動。", "success");
+                // ターゲット探索を自動完了し、リード化合物探索へ
+                const phase = this.phases[this.currentPhase];
+                phase.progress = 100;
+                phase.executedActions = phase.actions.map((a,i)=>i);
+                this.currentPhase++;
+                this.renderPhases();
+                this.updateStatus();
+                this.addMessage(`📋 ${this.phases[this.currentPhase].name}を開始します。`, "success");
+            }
+            
+            completePhase() {
+                const currentPhaseName = this.phases[this.currentPhase].name;
+                
+                // フェーズ完了サマリーを表示
+                this.showPhaseSummary();
+                
+                // ランダムイベント発生
+                setTimeout(() => {
+                    this.triggerRandomEvent();
+                }, 1500);
+            }
+            
+            showPhaseSummary() {
+                const summaryDiv = document.getElementById('phase-summary');
+                const phase = this.phases[this.currentPhase];
+                
+                summaryDiv.innerHTML = `
+                    <div class="phase-summary">
+                        <h3>📊 ${phase.name} 完了レポート</h3>
+                        <div class="summary-grid">
+                            <div class="summary-item">
+                                <div class="summary-label">消費予算</div>
+                                <div class="summary-value">$${(this.totalSpent/1000000).toFixed(1)}M</div>
+                            </div>
+                            <div class="summary-item">
+                                <div class="summary-label">経過時間</div>
+                                <div class="summary-value">${this.months}ヶ月</div>
+                            </div>
+                            <div class="summary-item">
+                                <div class="summary-label">現在の成功確率</div>
+                                <div class="summary-value">${Math.round(this.successRate)}%</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                summaryDiv.style.display = 'block';
+                
+                setTimeout(() => {
+                    summaryDiv.style.display = 'none';
+                }, 5000);
+            }
+            
+            triggerRandomEvent() {
+                const eventType = Math.random();
+                let events;
+                
+                // 臨床試験フェーズでのみ重篤な副作用が発生する可能性
+                const canHaveCriticalEvent = this.currentPhase >= 3; // Phase I以降
+                
+                if (eventType < 0.4) {
+                    events = this.randomEvents.positive;
+                } else if (eventType < 0.8) {
+                    events = [...this.randomEvents.negative];
+                    // 臨床試験前は重篤な副作用イベントを除外
+                    if (!canHaveCriticalEvent) {
+                        events = events.filter(e => !e.effects.isCritical);
+                    }
+                    // 重篤な副作用の発生確率を下げる（10%の確率）
+                    if (canHaveCriticalEvent && Math.random() > 0.1) {
+                        events = events.filter(e => !e.effects.isCritical);
+                    }
+                } else {
+                    events = this.randomEvents.neutral;
+                }
+                
+                const event = events[Math.floor(Math.random() * events.length)];
+                this.showEventModal(event, eventType < 0.4 ? 'positive' : eventType < 0.8 ? 'negative' : 'neutral');
+            }
+            
+            showEventModal(event, type) {
+                const modal = document.getElementById('event-modal');
+                const content = document.getElementById('event-content');
+                
+                // 重篤な副作用の場合は特別な処理
+                if (event.effects.isCritical) {
+                    content.innerHTML = `
+                        <div class="event-header">
+                            <div class="event-icon">☠️</div>
+                            <h2 class="event-title" style="color: #d32f2f">${event.title}</h2>
+                        </div>
+                        <div class="event-description" style="color: #d32f2f">
+                            ${event.description}
+                        </div>
+                        <div class="event-effects" style="background: #ffebee; border: 2px solid #d32f2f;">
+                            <h4 style="color: #d32f2f">重大な影響：</h4>
+                            <p>被験者の安全確保のため、プロジェクトは即座に中止されます。</p>
+                            <p>規制当局への報告と調査が必要です。</p>
+                        </div>
+                        <button class="btn btn-danger" onclick="game.forceTermination('重篤な副作用')">
+                            了解
+                        </button>
+                    `;
+                    
+                    modal.style.display = 'flex';
+                    return;
+                }
+                
+                const icon = type === 'positive' ? '🎉' : type === 'negative' ? '⚠️' : '📰';
+                const color = type === 'positive' ? '#4CAF50' : type === 'negative' ? '#f44336' : '#FF9800';
+                
+                // 選択肢を生成
+                let actionButtons = '';
+                if (type === 'negative' || (type === 'neutral' && event.strategicShift)) {
+                    actionButtons = `
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
+                            <button class="btn btn-primary" onclick="game.applyEventEffects(${JSON.stringify(event.effects).replace(/"/g, '&quot;')})">
+                                現状維持で進む
+                            </button>
+                            <button class="btn btn-warning" onclick="game.requestAdditionalFunding()">
+                                追加予算を要請
+                            </button>
+                            <button class="btn btn-danger" onclick="game.reviseStrategy()">
+                                戦略を見直す
+                            </button>
+                            ${this.currentPhase > 0 ? '<button class="btn btn-info" onclick="game.reviewPreviousPhase()" style="background: linear-gradient(135deg, #36D1DC 0%, #5B86E5 100%); color: white;">前フェーズを補強</button>' : ''}
+                        </div>
+                    `;
+                } else {
+                    actionButtons = `
+                        <button class="btn btn-primary" onclick="game.applyEventEffects(${JSON.stringify(event.effects).replace(/"/g, '&quot;')})">
+                            了解
+                        </button>
+                    `;
+                }
+                
+                content.innerHTML = `
+                    <div class="event-header">
+                        <div class="event-icon">${icon}</div>
+                        <h2 class="event-title" style="color: ${color}">${event.title}</h2>
+                    </div>
+                    <div class="event-description">
+                        ${event.description}
+                    </div>
+                    <div class="event-effects">
+                        <h4>影響：</h4>
+                        ${this.renderEventEffects(event.effects)}
+                    </div>
+                    ${actionButtons}
+                `;
+                
+                modal.style.display = 'flex';
+                this.currentEvent = event;
+            }
+            
+            renderEventEffects(effects) {
+                let html = '';
+                
+                if (effects.budget) {
+                    const sign = effects.budget > 0 ? '+' : '';
+                    const className = effects.budget > 0 ? 'effect-positive' : 'effect-negative';
+                    html += `<div class="effect-item">
+                        <span>予算</span>
+                        <span class="${className}">${sign}$${(Math.abs(effects.budget)/1000000).toFixed(1)}M</span>
+                    </div>`;
+                }
+                
+                if (effects.successRate) {
+                    const sign = effects.successRate > 0 ? '+' : '';
+                    const className = effects.successRate > 0 ? 'effect-positive' : 'effect-negative';
+                    html += `<div class="effect-item">
+                        <span>成功確率</span>
+                        <span class="${className}">${sign}${effects.successRate}%</span>
+                    </div>`;
+                }
+                
+                if (effects.competitiveness) {
+                    const sign = effects.competitiveness > 0 ? '+' : '';
+                    const className = effects.competitiveness > 0 ? 'effect-positive' : 'effect-negative';
+                    html += `<div class="effect-item">
+                        <span>競争力</span>
+                        <span class="${className}">${sign}${effects.competitiveness}%</span>
+                    </div>`;
+                }
+                
+                if (effects.timeBonus) {
+                    const text = effects.timeBonus > 0 ? `+${effects.timeBonus}ヶ月` : `${effects.timeBonus}ヶ月`;
+                    const className = effects.timeBonus < 0 ? 'effect-positive' : 'effect-negative';
+                    html += `<div class="effect-item">
+                        <span>開発期間</span>
+                        <span class="${className}">${text}</span>
+                    </div>`;
+                }
+                
+                return html;
+            }
+            
+            applyEventEffects(effects) {
+                // 新規情報取得ボタンバグ対応: 必ずモーダルを閉じる
+                document.getElementById('event-modal').style.display = 'none';
+                if (effects.budget) {
+                    this.budget += effects.budget;
+                }
+                if (effects.successRate) {
+                    this.successRate += effects.successRate;
+                }
+                if (effects.competitiveness) {
+                    this.competitiveness += effects.competitiveness;
+                }
+                if (effects.timeBonus) {
+                    this.months += effects.timeBonus;
+                }
+
+                this.successRate = Math.min(Math.max(this.successRate, 0), 95);
+                this.competitiveness = Math.min(Math.max(this.competitiveness, 0), 100);
+
+                this.addMessage(effects.message, "event");
+
+                // 予算がマイナスになった場合の処理
+                if (this.budget < 0) {
+                    this.budget = 0;
+                    this.addMessage("💸 予算が完全に枯渇しました！資金調達が必要です。", "error");
+                    setTimeout(() => this.showResourceOptions(), 500);
+                    this.updateStatus();
+                    return;
+                }
+
+                // 次のフェーズへ
+                this.currentPhase++;
+
+                // ターゲット探索→リード化合物探索バグ修正
+                if (this.currentPhase >= this.phases.length) {
+                    this.gameOver(true);
+                } else {
+                    this.addMessage(`📋 ${this.phases[this.currentPhase].name}を開始します。`, "success");
+                    this.renderPhases();
+                }
+
+                this.updateStatus();
+            }
+            
+            updateStatus() {
+                document.getElementById('budget').textContent = `$${(this.budget/1000000).toFixed(1)}M`;
+                document.getElementById('months').textContent = this.months;
+                document.getElementById('success-rate').textContent = `${Math.round(this.successRate)}%`;
+                document.getElementById('competitiveness').textContent = `${Math.round(this.competitiveness)}%`;
+            }
+            
+            addMessage(message, type = '') {
+                const log = document.getElementById('message-log');
+                const messageEl = document.createElement('div');
+                messageEl.className = `message ${type}`;
+                messageEl.textContent = `[${this.months}ヶ月] ${message}`;
+                log.appendChild(messageEl);
+                log.scrollTop = log.scrollHeight;
+            }
+            
+            requestAdditionalFunding() {
+                const modal = document.getElementById('event-modal');
+                const content = document.getElementById('event-content');
+                
+                const fundingChance = Math.random();
+                let result;
+                
+                if (this.successRate > 50 && fundingChance < 0.7) {
+                    // 成功
+                    const additionalFunding = 15000000 + Math.floor(Math.random() * 10000000);
+                    this.budget += additionalFunding;
+                    result = {
+                        success: true,
+                        message: `✅ 追加予算${(additionalFunding/1000000).toFixed(1)}Mを獲得しました！`,
+                        description: "プロジェクトの進捗が評価され、投資家から追加資金を調達できました。"
+                    };
+                } else if (fundingChance < 0.3) {
+                    // 部分的成功
+                    const additionalFunding = 5000000;
+                    this.budget += additionalFunding;
+                    this.successRate -= 5;
+                    result = {
+                        success: true,
+                        message: `⚠️ 限定的な追加予算${(additionalFunding/1000000).toFixed(1)}Mを獲得。`,
+                        description: "一部の資金は確保できましたが、厳しい条件が付けられました。"
+                    };
+                } else {
+                    // 失敗
+                    this.competitiveness -= 10;
+                    this.months += 2;
+                    result = {
+                        success: false,
+                        message: "❌ 追加予算の要請は却下されました。",
+                        description: "投資家を説得できず、時間と信用を失いました。"
+                    };
+                }
+                
+                content.innerHTML = `
+                    <div class="event-header">
+                        <div class="event-icon">${result.success ? '💰' : '😔'}</div>
+                        <h2 class="event-title">${result.success ? '資金調達結果' : '資金調達失敗'}</h2>
+                    </div>
+                    <div class="event-description">
+                        ${result.description}
+                    </div>
+                    <button class="btn btn-primary" onclick="game.closeModalAndContinue('${result.message}')">
+                        続ける
+                    </button>
+                `;
+            }
+            
+            reviseStrategy() {
+                const modal = document.getElementById('event-modal');
+                const content = document.getElementById('event-content');
+                
+                const strategicOptions = [
+                    {
+                        name: "ピボット戦略",
+                        description: "開発方針を大幅に変更し、別の適応症を狙います",
+                        effects: {
+                            successRate: -10,
+                            competitiveness: 20,
+                            months: 6,
+                            message: "🔄 戦略を転換し、新たな市場機会を狙います。"
+                        }
+                    },
+                    {
+                        name: "パートナーシップ",
+                        description: "他社と提携して開発リスクを分散します",
+                        effects: {
+                            budget: 20000000,
+                            successRate: 5,
+                            competitiveness: -15,
+                            message: "🤝 戦略的提携により資金を確保しました。"
+                        }
+                    },
+                    {
+                        name: "フェーズ再評価",
+                        description: "現在のフェーズを再度精査し、効率化を図ります",
+                        effects: {
+                            successRate: 15,
+                            months: -3,
+                            budget: -5000000,
+                            message: "📊 詳細な再評価により開発を最適化しました。"
+                        }
+                    }
+                ];
+                
+                let optionsHtml = '';
+                strategicOptions.forEach((option, index) => {
+                    optionsHtml += `
+                        <div class="action-card" style="margin-bottom: 10px;">
+                            <h4>${option.name}</h4>
+                            <p style="font-size: 0.9em; color: #666;">${option.description}</p>
+                            <button class="btn btn-warning" onclick="game.applyStrategicChoice(${index})">
+                                この戦略を選択
+                            </button>
+                        </div>
+                    `;
+                });
+                
+                content.innerHTML = `
+                    <div class="event-header">
+                        <div class="event-icon">🎯</div>
+                        <h2 class="event-title">戦略の見直し</h2>
+                    </div>
+                    <div class="event-description">
+                        現在の状況を踏まえ、以下の戦略オプションから選択してください：
+                    </div>
+                    ${optionsHtml}
+                `;
+                
+                this.strategicOptions = strategicOptions;
+            }
+            
+            applyStrategicChoice(index) {
+                const choice = this.strategicOptions[index];
+                const effects = choice.effects;
+                
+                // 効果を適用
+                if (effects.budget) this.budget += effects.budget;
+                if (effects.successRate) this.successRate += effects.successRate;
+                if (effects.competitiveness) this.competitiveness += effects.competitiveness;
+                if (effects.months) this.months += effects.months;
+                
+                this.successRate = Math.min(Math.max(this.successRate, 0), 95);
+                this.competitiveness = Math.min(Math.max(this.competitiveness, 0), 100);
+                
+                this.closeModalAndContinue(effects.message);
+            }
+            
+            closeModalAndContinue(message) {
+                document.getElementById('event-modal').style.display = 'none';
+                this.addMessage(message, "event");
+                
+                // 元のイベントの基本効果も適用
+                if (this.currentEvent && this.currentEvent.effects) {
+                    const effects = this.currentEvent.effects;
+                    if (effects.budget) this.budget += effects.budget;
+                    if (effects.successRate) this.successRate += effects.successRate;
+                    if (effects.competitiveness) this.competitiveness += effects.competitiveness;
+                    if (effects.timeBonus) this.months += effects.timeBonus;
+                }
+                
+                this.successRate = Math.min(Math.max(this.successRate, 0), 95);
+                this.competitiveness = Math.min(Math.max(this.competitiveness, 0), 100);
+                
+                // 次のフェーズへ
+                this.currentPhase++;
+                
+                if (this.currentPhase >= this.phases.length) {
+                    this.gameOver(true);
+                } else {
+                    this.addMessage(`📋 ${this.phases[this.currentPhase].name}を開始します。`, "success");
+                    this.renderPhases();
+                }
+                
+                this.updateStatus();
+                this.currentEvent = null;
+            }
+            
+            reviewPreviousPhase() {
+                const modal = document.getElementById('event-modal');
+                const content = document.getElementById('event-content');
+                
+                const previousPhase = this.phases[this.currentPhase - 1];
+                const reviewCost = 8000000;
+                
+                if (this.budget < reviewCost) {
+                    content.innerHTML = `
+                        <div class="event-header">
+                            <div class="event-icon">💸</div>
+                            <h2 class="event-title">予算不足</h2>
+                        </div>
+                        <div class="event-description">
+                            前フェーズの補強には${(reviewCost/1000000).toFixed(1)}Mが必要ですが、予算が不足しています。
+                        </div>
+                        <button class="btn btn-primary" onclick="game.showEventModal(game.currentEvent, 'negative')">
+                            戻る
+                        </button>
+                    `;
+                    return;
+                }
+                
+                content.innerHTML = `
+                    <div class="event-header">
+                        <div class="event-icon">🔍</div>
+                        <h2 class="event-title">${previousPhase.name}の補強</h2>
+                    </div>
+                    <div class="event-description">
+                        <p>前フェーズで得られたデータを再解析し、追加実験を行うことで、プロジェクトの基盤を強化できます。</p>
+                        <div class="event-effects" style="margin-top: 15px;">
+                            <h4>必要コスト：${(reviewCost/1000000).toFixed(1)}M</h4>
+                            <h4>期待される効果：</h4>
+                            <div class="effect-item">
+                                <span>成功確率</span>
+                                <span class="effect-positive">+8〜15%</span>
+                            </div>
+                            <div class="effect-item">
+                                <span>追加期間</span>
+                                <span class="effect-negative">+2ヶ月</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 10px; justify-content: center; margin-top: 20px;">
+                        <button class="btn btn-success" onclick="game.executePhaseReview()">
+                            補強を実施
+                        </button>
+                        <button class="btn btn-warning" onclick="game.showEventModal(game.currentEvent, 'negative')">
+                            キャンセル
+                        </button>
+                    </div>
+                `;
+            }
+            
+            executePhaseReview() {
+                const reviewCost = 8000000;
+                this.budget -= reviewCost;
+                this.months += 2;
+                
+                const successBonus = 8 + Math.floor(Math.random() * 8);
+                this.successRate += successBonus;
+                
+                const message = `📈 前フェーズの補強により、成功確率が${successBonus}%向上しました！`;
+                
+                this.successRate = Math.min(this.successRate, 95);
+                this.closeModalAndContinue(message);
+            }
+            
+            executeAdditionalWork(phaseIndex) {
+                const phase = this.phases[phaseIndex];
+                const additionalCost = 3000000;
+                
+                if (this.budget < additionalCost) {
+                    this.addMessage("❌ 追加実験の予算が不足しています。", "error");
+                    return;
+                }
+                
+                this.budget -= additionalCost;
+                this.totalSpent += additionalCost;
+                this.months += 2;
+                
+                // 追加実験で残りの進捗を完了
+                const remainingProgress = 100 - phase.progress;
+                phase.progress = 100;
+                
+                this.addMessage(`✅ 追加実験により${phase.name}を完了しました！`, "success");
+                
+                this.updateStatus();
+                this.renderPhases();
+            }
+            
+            showResourceOptions() {
+                const modal = document.getElementById('event-modal');
+                const content = document.getElementById('event-content');
+                
+                const currentPhase = this.phases[this.currentPhase];
+                const minRequired = Math.min(...currentPhase.actions
+                    .filter((a, idx) => !currentPhase.executedActions || !currentPhase.executedActions.includes(idx))
+                    .map(a => a.cost));
+                
+                content.innerHTML = `
+                    <div class="event-header">
+                        <div class="event-icon">💸</div>
+                        <h2 class="event-title">資金調達オプション</h2>
+                    </div>
+                    <div class="event-description">
+                        <p>現在の予算: ${(this.budget/1000000).toFixed(1)}M</p>
+                        <p>最低必要額: ${(minRequired/1000000).toFixed(1)}M</p>
+                        <p>以下のオプションから選択してください：</p>
+                    </div>
+                    <div style="margin-top: 20px;">
+                        <div class="action-card" style="margin-bottom: 15px;">
+                            <h4>緊急資金調達</h4>
+                            <p>投資家に緊急アピール。成功率は現在の進捗に依存。</p>
+                            <button class="btn btn-warning" onclick="game.emergencyFunding()">
+                                実行（成功率: ${Math.round(this.successRate * 0.8)}%）
+                            </button>
+                        </div>
+                        <div class="action-card" style="margin-bottom: 15px;">
+                            <h4>アセット売却</h4>
+                            <p>他のプロジェクトの権利を売却。確実に資金を得るが競争力が低下。</p>
+                            <button class="btn btn-danger" onclick="game.sellAssets()">
+                                実行（$10M獲得、競争力-20%）
+                            </button>
+                        </div>
+                        <div class="action-card">
+                            <h4>共同開発提案</h4>
+                            <p>競合他社との共同開発。大きな資金を得るが主導権を一部失う。</p>
+                            <button class="btn btn-info" onclick="game.jointDevelopment()">
+                                実行（$25M獲得、競争力-30%、成功率+10%）
+                            </button>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" style="margin-top: 20px;" onclick="document.getElementById('event-modal').style.display='none'">
+                        キャンセル
+                    </button>
+                `;
+                
+                modal.style.display = 'flex';
+            }
+            
+            emergencyFunding() {
+                const successChance = this.successRate * 0.8 / 100;
+                if (Math.random() < successChance) {
+                    const funding = 15000000 + Math.floor(Math.random() * 10000000);
+                    this.budget += funding;
+                    this.addMessage(`✅ 緊急資金調達成功！${(funding/1000000).toFixed(1)}Mを獲得しました。`, "success");
+                } else {
+                    this.months += 3;
+                    this.competitiveness -= 5;
+                    this.addMessage("❌ 緊急資金調達に失敗。時間と信用を失いました。", "error");
+                }
+                document.getElementById('event-modal').style.display = 'none';
+                this.updateStatus();
+                this.renderPhases();
+            }
+            
+            sellAssets() {
+                this.budget += 10000000;
+                this.competitiveness -= 20;
+                this.competitiveness = Math.max(this.competitiveness, 0);
+                this.addMessage("💰 アセット売却により$10Mを獲得。競争力が低下しました。", "warning");
+                document.getElementById('event-modal').style.display = 'none';
+                this.updateStatus();
+                this.renderPhases();
+            }
+            
+            jointDevelopment() {
+                this.budget += 25000000;
+                this.competitiveness -= 30;
+                this.successRate += 10;
+                this.competitiveness = Math.max(this.competitiveness, 0);
+                this.successRate = Math.min(this.successRate, 95);
+                this.addMessage("🤝 共同開発契約締結。$25Mを獲得しましたが、主導権の一部を失いました。", "warning");
+                document.getElementById('event-modal').style.display = 'none';
+                this.updateStatus();
+                this.renderPhases();
+            }
+            
+            returnToPreviousPhase() {
+                if (this.currentPhase === 0) return;
+                
+                const modal = document.getElementById('event-modal');
+                const content = document.getElementById('event-content');
+                
+                content.innerHTML = `
+                    <div class="event-header">
+                        <div class="event-icon">⏪</div>
+                        <h2 class="event-title">前フェーズへの復帰</h2>
+                    </div>
+                    <div class="event-description">
+                        <p>前のフェーズ「${this.phases[this.currentPhase - 1].name}」に戻って追加の作業を行います。</p>
+                        <p style="color: #f44336; margin-top: 10px;">
+                            <strong>注意：</strong>現在のフェーズの進捗は失われ、時間も経過します。
+                        </p>
+                    </div>
+                    <div class="event-effects">
+                        <h4>影響：</h4>
+                        <div class="effect-item">
+                            <span>現フェーズ進捗</span>
+                            <span class="effect-negative">リセット</span>
+                        </div>
+                        <div class="effect-item">
+                            <span>追加時間</span>
+                            <span class="effect-negative">+3ヶ月</span>
+                        </div>
+                        <div class="effect-item">
+                            <span>信頼性</span>
+                            <span class="effect-negative">-5%</span>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-top: 20px;">
+                        <button class="btn btn-danger" onclick="game.executePreviousPhaseReturn()">
+                            前フェーズに戻る
+                        </button>
+                        <button class="btn btn-primary" onclick="document.getElementById('event-modal').style.display='none'">
+                            キャンセル
+                        </button>
+                    </div>
+                `;
+                
+                modal.style.display = 'flex';
+            }
+            
+            executePreviousPhaseReturn() {
+                // 現在のフェーズをリセット
+                const currentPhase = this.phases[this.currentPhase];
+                currentPhase.progress = 0;
+                currentPhase.executedActions = [];
+                
+                // ペナルティを適用
+                this.months += 3;
+                this.successRate -= 5;
+                this.successRate = Math.max(this.successRate, 0);
+                
+                // 前のフェーズに戻る
+                this.currentPhase--;
+                this.phases[this.currentPhase].progress = 0;
+                this.phases[this.currentPhase].executedActions = [];
+                
+                this.addMessage("⏪ 前のフェーズに戻りました。追加の作業を行ってください。", "warning");
+                
+                document.getElementById('event-modal').style.display = 'none';
+                this.updateStatus();
+                this.renderPhases();
+            }
+            
+            strategicTermination() {
+                const modal = document.getElementById('event-modal');
+                const content = document.getElementById('event-content');
+                
+                const salvageValue = Math.floor(this.successRate / 100 * 20000000);
+                
+                content.innerHTML = `
+                    <div class="event-header">
+                        <div class="event-icon">🛑</div>
+                        <h2 class="event-title">戦略的プロジェクト中止</h2>
+                    </div>
+                    <div class="event-description">
+                        <p>これ以上の投資はリスクが高すぎると判断し、プロジェクトを中止します。</p>
+                        <p>これまでの研究成果を他社にライセンスすることで、一部の投資を回収できます。</p>
+                    </div>
+                    <div class="event-effects">
+                        <h4>最終結果：</h4>
+                        <div class="effect-item">
+                            <span>開発期間</span>
+                            <span>${this.months}ヶ月</span>
+                        </div>
+                        <div class="effect-item">
+                            <span>総投資額</span>
+                            <span>${(this.totalSpent/1000000).toFixed(1)}M</span>
+                        </div>
+                        <div class="effect-item">
+                            <span>回収可能額</span>
+                            <span class="effect-positive">${(salvageValue/1000000).toFixed(1)}M</span>
+                        </div>
+                    </div>
+                    <button class="btn btn-danger" onclick="game.executeTermination(${salvageValue})">
+                        プロジェクトを中止
+                    </button>
+                `;
+                
+                modal.style.display = 'flex';
+            }
+            
+            executeTermination(salvageValue) {
+                const container = document.getElementById('phases-container');
+                const terminationEl = document.createElement('div');
+                terminationEl.className = 'game-over';
+                terminationEl.style.background = 'linear-gradient(135deg, #FF9800 0%, #F44336 100%)';
+                
+                terminationEl.innerHTML = `
+                    <h2>🏁 戦略的撤退</h2>
+                    <p>プロジェクトを中止しました。</p>
+                    <p>開発期間: ${this.months}ヶ月</p>
+                    <p>到達フェーズ: ${this.phases[this.currentPhase].name}</p>
+                    <p>総投資額: ${(this.totalSpent/1000000).toFixed(1)}M</p>
+                    <p>回収額: ${(salvageValue/1000000).toFixed(1)}M</p>
+                    <p>純損失: ${((this.totalSpent - salvageValue)/1000000).toFixed(1)}M</p>
+                    <p style="margin-top: 20px;">失敗も貴重な経験です。次回はより良い戦略で挑戦しましょう！</p>
+                    <button class="btn btn-warning restart-btn" onclick="location.reload()">もう一度プレイ</button>
+                `;
+                
+                container.innerHTML = '';
+                container.appendChild(terminationEl);
+                document.getElementById('event-modal').style.display = 'none';
+            }
+            
+            forceTermination(reason) {
+                const container = document.getElementById('phases-container');
+                const terminationEl = document.createElement('div');
+                terminationEl.className = 'game-over';
+                terminationEl.style.background = 'linear-gradient(135deg, #d32f2f 0%, #b71c1c 100%)';
+                
+                let reasonText = '';
+                switch(reason) {
+                    case '資金調達失敗':
+                        reasonText = '緊急資金調達に失敗し、プロジェクト継続が不可能になりました。';
+                        break;
+                    case '重篤な副作用':
+                        reasonText = '重篤な副作用が発生し、規制当局からプロジェクト中止命令が出されました。';
+                        break;
+                    case 'リソース枯渇':
+                        reasonText = '利用可能なすべての資金調達手段が尽き、プロジェクト継続が不可能になりました。';
+                        break;
+                    default:
+                        reasonText = 'プロジェクトの継続が不可能になりました。';
+                }
+                
+                terminationEl.innerHTML = `
+                    <h2>💔 プロジェクト強制終了</h2>
+                    <p style="font-size: 1.2em; margin: 20px 0;">${reasonText}</p>
+                    <div style="background: rgba(0,0,0,0.2); padding: 20px; border-radius: 10px; margin: 20px 0;">
+                        <p><strong>最終レポート</strong></p>
+                        <p>開発期間: ${this.months}ヶ月</p>
+                        <p>到達フェーズ: ${this.phases[this.currentPhase].name}</p>
+                        <p>総投資額: ${(this.totalSpent/1000000).toFixed(1)}M</p>
+                        <p>最終成功確率: ${Math.round(this.successRate)}%</p>
+                        <p>市場競争力: ${Math.round(this.competitiveness)}%</p>
+                    </div>
+                    <p>創薬開発の厳しい現実を経験しました。次回はより慎重な戦略で挑戦しましょう。</p>
+                    <button class="btn restart-btn" style="background: #ff5252; margin-top: 20px;" onclick="location.reload()">
+                        新しいプロジェクトを開始
+                    </button>
+                `;
+                
+                container.innerHTML = '';
+                container.appendChild(terminationEl);
+                
+                // メッセージログもクリア
+                const messageLog = document.getElementById('message-log');
+                messageLog.innerHTML = `<div class="message error">プロジェクトが強制終了されました: ${reason}</div>`;
+            }
+            
+            gameOver(success) {
+                const container = document.getElementById('phases-container');
+                const gameOverEl = document.createElement('div');
+                gameOverEl.className = 'game-over';
+                
+                if (success) {
+                    const finalScore = (this.successRate * 0.6 + this.competitiveness * 0.4);
+                    const finalSuccess = Math.random() * 100 < finalScore;
+                    
+                    if (finalSuccess) {
+                        gameOverEl.innerHTML = `
+                            <h2>🎊 おめでとうございます！</h2>
+                            <p>新薬の開発に成功しました！</p>
+                            <p>開発期間: ${this.months}ヶ月</p>
+                            <p>総開発費: $${(this.totalSpent/1000000).toFixed(1)}M</p>
+                            <p>残り予算: $${(this.budget/1000000).toFixed(1)}M</p>
+                            <p>最終成功確率: ${Math.round(this.successRate)}%</p>
+                            <p>市場競争力: ${Math.round(this.competitiveness)}%</p>
+                            <button class="btn btn-success restart-btn" onclick="location.reload()">もう一度プレイ</button>
+                        `;
+                    } else {
+                        gameOverEl.innerHTML = `
+                            <h2>😢 惜しい！</h2>
+                            <p>最終承認で却下されました。</p>
+                            <p>成功確率${Math.round(this.successRate)}%、競争力${Math.round(this.competitiveness)}%でしたが、承認基準を満たせませんでした。</p>
+                            <button class="btn btn-warning restart-btn" onclick="location.reload()">もう一度挑戦</button>
+                        `;
+                    }
+                } else {
+                    gameOverEl.innerHTML = `
+                        <h2>💸 ゲームオーバー</h2>
+                        <p>予算が尽きてしまいました...</p>
+                        <p>開発期間: ${this.months}ヶ月</p>
+                        <p>到達フェーズ: ${this.phases[this.currentPhase].name}</p>
+                        <button class="btn btn-warning restart-btn" onclick="location.reload()">もう一度プレイ</button>
+                    `;
+                }
+                
+                container.appendChild(gameOverEl);
+            }
+        }
+        
+        // ゲーム開始
+        const game = new DrugDiscoveryGame();
+    </script>
+</body>
+</html>
